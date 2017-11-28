@@ -58,7 +58,7 @@ results = Parallel(n_jobs=num_cores)(delayed(processInput)(i) for i in inputs)
 
 # append result to existing data frame DF
 newcol = pd.Series(results)
-data.insert(10,'outcome',newcol)
+data1.insert(10,'outcome',newcol)
 
 #%% BAYES hierarchical aggregation
 #%%
@@ -87,7 +87,7 @@ def aggregate(q,ifp):
     print(chr(27) + "[2J")
     print(q * '*',(len(ifps) - q) * '-')
     # question data
-    dat = data[data.ifp_id == ifp]
+    dat = data1[data1.ifp_id == ifp]
     
     # initialise working variable
     wv = pd.DataFrame(dat[['forecast_id','answer_option','value']])
@@ -139,7 +139,7 @@ def aggregate(q,ifp):
         
     return wv.values, brier, std
 
-ifps = data.ifp_id.unique()
+ifps = data1.ifp_id.unique()
 #ifps = ifps[0:1000] # for debugging
 results = Parallel(n_jobs=70)(delayed(aggregate)(q, ifp)
                                 for q, ifp in enumerate(ifps))
@@ -169,3 +169,25 @@ for i in range(len(ifps)):
     plt.xlabel('iter.')
     plt.ylabel('brier std')
 plt.show()    
+
+#%% plot average Brier across questions over different iter. number
+#%%
+tmp = np.zeros([len(ifps),11], dtype=np.float)
+tmp.fill(np.nan)
+for i in range(len(ifps)):
+    tmp[i,0:len(p[i])] = np.array(p[i])
+
+
+x = np.nanmean(tmp,axis=0)
+y = np.nanstd(tmp,axis=0)
+plt.plot(x[0:8],y[0:8])
+plt.plot(x)
+plt.plot(y)
+plt.xlabel('iter.')
+plt.ylabel('Brier across questions')
+plt.legend(['mean','std'])
+
+plt.plot(np.mean(np.isnan(tmp), axis=0))
+    
+
+

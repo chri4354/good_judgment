@@ -299,6 +299,11 @@ plt.show()
 
 #%% Forecast correlation vs. accuracy of the average
 #%% define function to compute correlation
+def bayes(x,opts):
+    p1 = x.values[0,]
+    p2 = x.values[1,]
+    return pd.DataFrame((p1 * p2) / np.sum(p1*p2), index=opts)
+
 def compute_corr(i, subji):
     print(chr(27) + "[2J")
     # progression bar
@@ -313,7 +318,8 @@ def compute_corr(i, subji):
                         forecasts_['ifp_id'][forecasts_['user_id'] == subjj])
         x = []
         y = []
-        a = []
+        a_avg = []
+        a_bays = []
         for q in overlap:
             # forecast probas from subject i and j
             x_ = forecasts_['value'][(
@@ -340,9 +346,17 @@ def compute_corr(i, subji):
             x = np.append(x,x_)
             y = np.append(y,y_)
             # compute accuracy of the average prediction
-            a = np.append(a,
+            a_avg = np.append(a_avg,
                           compute_brier(
                                   np.mean([x_,y_]),
+                                  forecasts_.answer_option.unique(
+                                          )[nopts-1]== \
+                                  IFP.outcome[IFP.ifp_id==q]))
+
+            # compute accuracy of the Bayesian aggregation FIX!
+            a_bays = np.append(a_bays,
+                          compute_brier(
+                                  bayes([x_,y_], nopts),
                                   forecasts_.answer_option.unique(
                                           )[nopts-1]== \
                                   IFP.outcome[IFP.ifp_id==q]))
@@ -353,7 +367,7 @@ def compute_corr(i, subji):
             A = np.append(A,np.array(-999)) # pearson's R
         else:
             R = np.append(R,np.corrcoef(x,y)[0,1]) # pearson's R
-            A = np.append(A,np.mean(a)) # pearson's R
+            A = np.append(A,np.mean(a_avg)) # pearson's R
     return R, A
 
 # %% define distance functions
